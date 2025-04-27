@@ -3,6 +3,8 @@ const path = require('path');
 const http = require('http');
 const socketIo = require('socket.io');
 const { Pool } = require('pg');
+const session = require('express-session');
+const bcrypt = require('bcrypt');
 require('dotenv').config();
 
 const app = express();
@@ -27,8 +29,15 @@ const pool = new Pool({
     }
 });
 
+// Middleware for JSON parsing and session management
+app.use(express.json());
+app.use(session({
+    secret: process.env.SESSION_SECRET || 'secret_key_here',
+    resave: false,
+    saveUninitialized: false
+}));
 
-// Create messages table if it doesn't exist
+// Create messages and users tables if they don't exist
 async function initializeDatabase() {
     try {
         await pool.query(`
@@ -37,6 +46,14 @@ async function initializeDatabase() {
                 sender VARCHAR(255) NOT NULL,
                 message TEXT NOT NULL,
                 room VARCHAR(255) DEFAULT 'general',
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        `);
+        await pool.query(`
+            CREATE TABLE IF NOT EXISTS users (
+                id SERIAL PRIMARY KEY,
+                username VARCHAR(255) UNIQUE NOT NULL,
+                password_hash TEXT NOT NULL,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
         `);
@@ -52,6 +69,61 @@ initializeDatabase();
 app.use(express.static(path.join(__dirname, 'public')));
 
 let connectedSockets = new Set();
+
+// Middleware to check authentication
+function checkAuth(req, res, next) {
+    if (req.session && req.session.userId) {
+        return next();
+    }
+    return res.redirect('/login.html');
+}
+
+// Protect the main page
+app.get('/', checkAuth, (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
+
+// User registration route
+app.post('/register', async (req, res) => {
+    try {
+        const { username, password } = req.body;
+        const passwordHash = await bcrypt.hash(password, 10);
+        await pool.query(
+            'INSERT INTO users (username, password_hash) VALUES ($1, $2)',
+            [username, passwordHash]
+        );
+        res.status(201).send({ message: 'Registered successfully' });
+    } catch (error) {
+        res.status(400).send({ error: 'Registration failed' });
+    }
+});
+
+// User login route
+app.post('/login', async (req, res) => {
+    try {
+        const { username, password } = req.body;
+        const userResult = await pool.query('SELECT * FROM users WHERE username=$1', [username]);
+        if (userResult.rowCount === 0) {
+            return res.status(401).send({ error: 'Invalid credentials' });
+        }
+        const user = userResult.rows[0];
+        const match = await bcrypt.compare(password, user.password_hash);
+        if (!match) {
+            return res.status(401).send({ error: 'Invalid credentials' });
+        }
+        req.session.userId = user.id;
+        res.send({ message: 'Login successful' });
+    } catch (error) {
+        res.status(400).send({ error: 'Login failed' });
+    }
+});
+
+// User logout route
+app.get('/logout', (req, res) => {
+    req.session.destroy(() => {
+        res.redirect('/login.html');
+    });
+});
 
 // Socket.io connection handling
 io.on('connection', (socket) => {

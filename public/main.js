@@ -8,13 +8,6 @@ typingIndicator.className = 'text-sm text-gray-500 italic hidden';
 typingIndicator.textContent = 'Someone is typing...';
 messageContainer.parentNode.insertBefore(typingIndicator, messageContainer.nextSibling);
 
-// Get username from prompt or use "Anonymous"
-let username = localStorage.getItem('chat-username');
-if (!username) {
-    username = prompt('Enter your name to join the chat:') || 'Anonymous';
-    localStorage.setItem('chat-username', username);
-}
-
 // Handle total connected clients
 socket.on('clients-total', (total) => {
     console.log('Total connected clients:', total);
