@@ -23,7 +23,13 @@
                     <div class="h-3 w-3 bg-green-400 rounded-full mr-2"></div>
                     <span>Online</span>
                 </span>
-                <img src="https://dummyimage.com/40x40/000/fff" alt="Profile" class="h-8 w-8 rounded-full">
+                <div class="flex items-center">
+                    <span id="username-display" class="mr-2">Guest</span>
+                    <img src="https://dummyimage.com/40x40/000/fff" alt="Profile" class="h-8 w-8 rounded-full">
+                </div>
+                <button id="logout-button" class="text-white hover:text-gray-200">
+                    <i class="fas fa-sign-out-alt"></i> Logout
+                </button>
             </div>
         </div>
     </header>
@@ -34,49 +40,29 @@
         <aside id="sidebar" class="bg-white w-64 md:w-80 border-r border-gray-300 hidden md:block flex-shrink-0 overflow-y-auto transition-all">
             <div class="p-4 border-b">
                 <div class="relative">
-                    <input type="text" placeholder="Search contacts..." class="w-full py-2 pl-10 pr-4 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-400">
+                    <input type="text" id="search-contacts" placeholder="Search contacts..." class="w-full py-2 pl-10 pr-4 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-400">
                     <div class="absolute left-3 top-2.5 text-gray-400">
                         <i class="fas fa-search"></i>
                     </div>
                 </div>
             </div>
-            <div class="contacts overflow-y-auto">
-                <!-- Contact List -->
-                <div class="contact p-4 border-b hover:bg-gray-100 flex items-center cursor-pointer">
-                    <div class="relative">
-                        <img src="https://via.placeholder.com/50" alt="Contact" class="h-12 w-12 rounded-full">
-                        <div class="absolute bottom-0 right-0 h-3 w-3 bg-green-400 rounded-full border-2 border-white"></div>
-                    </div>
-                    <div class="ml-3 flex-1">
-                        <h3 class="text-md font-semibold">Jane Doe</h3>
-                        <p class="text-sm text-gray-600 truncate">Hey, how are you doing?</p>
-                    </div>
-                    <div class="text-xs text-gray-500">5m</div>
-                </div>
-                
-                <div class="contact p-4 border-b hover:bg-gray-100 flex items-center cursor-pointer bg-indigo-50">
-                    <div class="relative">
-                        <img src="https://via.placeholder.com/50" alt="Contact" class="h-12 w-12 rounded-full">
-                        <div class="absolute bottom-0 right-0 h-3 w-3 bg-green-400 rounded-full border-2 border-white"></div>
-                    </div>
-                    <div class="ml-3 flex-1">
-                        <h3 class="text-md font-semibold">John Smith</h3>
-                        <p class="text-sm text-gray-600 truncate">I'll be there in 5 minutes</p>
-                    </div>
-                    <div class="text-xs text-gray-500">10m</div>
-                </div>
-                
-                <div class="contact p-4 border-b hover:bg-gray-100 flex items-center cursor-pointer">
-                    <div class="relative">
-                        <img src="https://via.placeholder.com/50" alt="Contact" class="h-12 w-12 rounded-full">
-                        <div class="absolute bottom-0 right-0 h-3 w-3 bg-gray-400 rounded-full border-2 border-white"></div>
-                    </div>
-                    <div class="ml-3 flex-1">
-                        <h3 class="text-md font-semibold">Team Chat</h3>
-                        <p class="text-sm text-gray-600 truncate">Let's discuss the project...</p>
-                    </div>
-                    <div class="text-xs text-gray-500">1h</div>
-                </div>
+            
+            <!-- Chat navigation tabs -->
+            <div class="flex border-b">
+                <button id="tab-direct" class="flex-1 py-2 text-center bg-indigo-100 font-medium text-indigo-600">Direct Messages</button>
+                <button id="tab-groups" class="flex-1 py-2 text-center text-gray-600 hover:bg-gray-50">Group Chats</button>
+            </div>
+            
+            <!-- New Group Button -->
+            <div id="create-group-container" class="p-4 border-b hidden">
+                <button id="create-group-btn" class="w-full bg-indigo-600 text-white py-2 rounded-lg hover:bg-indigo-700">
+                    <i class="fas fa-plus mr-2"></i> Create New Group
+                </button>
+            </div>
+            
+            <!-- Contact List Container -->
+            <div id="contacts-container" class="contacts overflow-y-auto">
+                <!-- Contacts will be dynamically loaded here -->
             </div>
         </aside>
 
@@ -85,62 +71,25 @@
             <!-- Chat Header -->
             <div class="px-6 py-4 bg-white shadow flex items-center">
                 <div class="flex items-center">
-                    <img src="https://via.placeholder.com/50" alt="Contact" class="h-10 w-10 rounded-full">
+                    <img id="chat-avatar" src="https://dummyimage.com/40x40/000/fff" alt="Contact" class="h-10 w-10 rounded-full">
                     <div class="ml-3">
-                        <h3 class="text-lg font-semibold">John Smith</h3>
-                        <p class="text-sm text-gray-600">Online</p>
+                        <h3 id="chat-name" class="text-lg font-semibold">Select a chat</h3>
+                        <p id="chat-status" class="text-sm text-gray-600">Please select a conversation to start chatting</p>
                     </div>
                 </div>
                 <div class="ml-auto flex space-x-3">
-                    <button class="text-gray-500 hover:text-indigo-600"><i class="fas fa-phone"></i></button>
-                    <button class="text-gray-500 hover:text-indigo-600"><i class="fas fa-video"></i></button>
-                    <button class="text-gray-500 hover:text-indigo-600"><i class="fas fa-info-circle"></i></button>
+                    <button id="call-btn" class="text-gray-500 hover:text-indigo-600 hidden"><i class="fas fa-phone"></i></button>
+                    <button id="video-btn" class="text-gray-500 hover:text-indigo-600 hidden"><i class="fas fa-video"></i></button>
+                    <button id="info-btn" class="text-gray-500 hover:text-indigo-600 hidden"><i class="fas fa-info-circle"></i></button>
                 </div>
             </div>
 
             <!-- Messages -->
             <div class="flex-1 px-6 py-4 overflow-y-auto">
-                <div class="space-y-6">
-                    <!-- Received Message -->
-                    <div class="flex items-start">
-                        <img src="https://dummyimage.com/40x40/000/fff" alt="Contact" class="h-10 w-10 rounded-full mr-3">
-                        <div>
-                            <div class="bg-white p-3 rounded-lg shadow-sm max-w-xs md:max-w-md">
-                                <p class="text-sm">Hey! How's it going?</p>
-                            </div>
-                            <span class="text-xs text-gray-500 leading-none mt-1 block">10:32 AM</span>
-                        </div>
-                    </div>
-
-                    <!-- Sent Message -->
-                    <div class="flex items-start justify-end">
-                        <div class="flex flex-col items-end">
-                            <div class="bg-indigo-600 text-white p-3 rounded-lg shadow-sm max-w-xs md:max-w-md">
-                                <p class="text-sm">I'm good! Just working on the new project. How about you?</p>
-                            </div>
-                            <span class="text-xs text-gray-500 leading-none mt-1">10:35 AM</span>
-                        </div>
-                    </div>
-
-                    <!-- Received Message -->
-                    <div class="flex items-start">
-                        <img src="https://dummyimage.com/40x40/000/fff" alt="Contact" class="h-10 w-10 rounded-full mr-3">
-                        <div>
-                            <div class="bg-white p-3 rounded-lg shadow-sm max-w-xs md:max-w-md">
-                                <p class="text-sm">I'm doing well too! Let's catch up later about the project details.</p>
-                            </div>
-                            <span class="text-xs text-gray-500 leading-none mt-1 block">10:40 AM</span>
-                        </div>
-                    </div>
-
-                    <!-- Sent Message -->
-                    <div class="flex items-start justify-end">
-                        <div class="flex flex-col items-end">
-                            <div class="bg-indigo-600 text-white p-3 rounded-lg shadow-sm max-w-xs md:max-w-md">
-                                <p class="text-sm">Sounds good! I'll be free after 3 PM.</p>
-                            </div>
-                            <span class="text-xs text-gray-500 leading-none mt-1">10:42 AM</span>
-                        </div>
+                <div id="messages-container" class="space-y-6">
+                    <!-- Messages will be dynamically loaded here -->
+                    <div class="flex justify-center items-center h-full">
+                        <p class="text-gray-500">Select a conversation to start chatting</p>
                     </div>
                 </div>
             </div>
@@ -148,16 +97,16 @@
             <!-- Message Input -->
             <div class="px-6 py-3 bg-white border-t">
                 <div class="flex items-center">
-                    <button class="text-gray-500 hover:text-indigo-600 mr-3">
+                    <button id="attachment-btn" class="text-gray-500 hover:text-indigo-600 mr-3">
                         <i class="fas fa-paperclip text-xl"></i>
                     </button>
                     <div class="flex-1 relative">
-                        <input type="text" placeholder="Type a message..." class="w-full py-2 px-4 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-indigo-400">
-                        <button class="absolute right-3 top-2 text-gray-400 hover:text-indigo-600">
+                        <input id="message-input" type="text" placeholder="Type a message..." class="w-full py-2 px-4 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-indigo-400" disabled>
+                        <button id="emoji-btn" class="absolute right-3 top-2 text-gray-400 hover:text-indigo-600">
                             <i class="far fa-smile text-xl"></i>
                         </button>
                     </div>
-                    <button class="ml-3 bg-indigo-600 text-white rounded-full p-2 hover:bg-indigo-700 transition">
+                    <button id="send-btn" class="ml-3 bg-indigo-600 text-white rounded-full p-2 hover:bg-indigo-700 transition" disabled>
                         <i class="fas fa-paper-plane"></i>
                     </button>
                 </div>
@@ -165,17 +114,29 @@
         </main>
     </div>
 
-    <script>
-        // Toggle mobile sidebar
-        document.getElementById('mobile-menu-button').addEventListener('click', function() {
-            const sidebar = document.getElementById('sidebar');
-            sidebar.classList.toggle('hidden');
-        });
-    </script>
+    <!-- Create Group Modal -->
+    <div id="group-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-50">
+        <div class="bg-white rounded-lg w-96 p-6">
+            <h3 class="text-lg font-semibold mb-4">Create New Group Chat</h3>
+            <div class="mb-4">
+                <label for="group-name" class="block text-sm font-medium text-gray-700 mb-1">Group Name</label>
+                <input type="text" id="group-name" class="w-full px-3 py-2 border rounded-md">
+            </div>
+            <div class="mb-4">
+                <label class="block text-sm font-medium text-gray-700 mb-1">Add Members</label>
+                <div id="group-members" class="max-h-40 overflow-y-auto border rounded-md p-2">
+                    <!-- User checkboxes will be added here -->
+                </div>
+            </div>
+            <div class="flex justify-end space-x-2">
+                <button id="cancel-group" class="px-4 py-2 border rounded text-gray-700 hover:bg-gray-100">Cancel</button>
+                <button id="create-group" class="px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700">Create</button>
+            </div>
+        </div>
+    </div>
+
     <script src="/socket.io/socket.io.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/moment@2.29.4/moment.min.js"></script>
-
     <script src="main.js"></script>
-
 </body>
 </html>
