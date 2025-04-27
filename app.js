@@ -55,11 +55,17 @@ async function initializeDatabase() {
                 id SERIAL PRIMARY KEY,
                 username VARCHAR(255) UNIQUE NOT NULL,
                 password_hash TEXT NOT NULL,
-                display_name VARCHAR(255),
-                avatar_url TEXT,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
         `);
+        
+        // Add columns if they don't exist
+        try {
+            await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS display_name VARCHAR(255)`);
+            await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS avatar_url TEXT`);
+        } catch (err) {
+            console.log('Note: Column additions might not be supported in your PostgreSQL version');
+        }
         
         // Messages table
         await pool.query(`
