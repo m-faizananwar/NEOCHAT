@@ -324,8 +324,8 @@ io.on('connection', (socket) => {
         const roomId = `${chatType}_${chatId}`;
         socket.join(roomId);
         
-        // Load chat history
-        const messages = await getChatHistory(chatId, chatType);
+        // Load chat history - pass the socket and username
+        const messages = await getChatHistory(chatId, chatType, socket, username);
         socket.emit('chat-history', messages);
     });
     
@@ -334,18 +334,12 @@ io.on('connection', (socket) => {
         const { message, sender, chatId, chatType, dateTime } = data;
         
         try {
-            // Save message to database
-            await pool.query(
-                'INSERT INTO messages (sender, recipient, message, chat_type, chat_id) VALUES ($1, $2, $3, $4, $5)',
-                [sender, chatType === 'direct' ? chatId : null, message, chatType, chatId]
-            );
-            
-            // Determine who should receive the message
+            // First, send message to recipient immediately (before DB operation)
             if (chatType === 'direct') {
                 // Find recipient's socket
                 const recipientSocketId = findSocketIdByUsername(chatId);
                 
-                // Emit message to sender and recipient
+                // Emit message to recipient
                 if (recipientSocketId) {
                     io.to(recipientSocketId).emit('chat-message', {
                         message,
@@ -376,8 +370,22 @@ io.on('connection', (socket) => {
                     dateTime
                 });
             }
+
+            // Then try to save to database (this won't block the message delivery)
+            try {
+                // Use a simpler query with columns we know exist
+                await pool.query(
+                    'INSERT INTO messages (sender, message) VALUES ($1, $2)',
+                    [sender, message]
+                );
+            } catch (dbError) {
+                console.error('Error saving message to database:', dbError);
+                // Don't rethrow - we still delivered the message in real-time
+            }
         } catch (error) {
             console.error('Error handling message:', error);
+            // Still send confirmation to sender to avoid UI hanging
+            socket.emit('message-error', { error: 'Failed to deliver message' });
         }
     });
     
@@ -417,30 +425,33 @@ io.on('connection', (socket) => {
 });
 
 // Helper function to get chat history
-async function getChatHistory(chatId, chatType) {
+async function getChatHistory(chatId, chatType, socket, username) {
     try {
         let query;
         let params;
         
         if (chatType === 'direct') {
-            // For direct messages, get messages where either sender or recipient is the specified user
+            // For direct messages, get messages where either sender/recipient match the users
             query = `
                 SELECT * FROM messages 
-                WHERE ((sender = $1 AND recipient = $2) OR (sender = $2 AND recipient = $1)) 
-                AND chat_type = 'direct'
+                WHERE ((sender = $1) OR (sender = $2))
                 ORDER BY created_at ASC
                 LIMIT 50
             `;
-            params = [chatId, onlineUsers.get(Object.keys(io.sockets.sockets)[0])];
+            
+            // Use the username from parameter
+            params = [chatId, username];
         } else {
-            // For group chats, get messages for the specified group
+            // For group chats, get messages for the specified group ID
             query = `
                 SELECT * FROM messages 
-                WHERE chat_id = $1 AND chat_type = $2
+                WHERE sender IN (
+                    SELECT username FROM group_members WHERE group_id = $1
+                )
                 ORDER BY created_at ASC
                 LIMIT 50
             `;
-            params = [chatId, chatType];
+            params = [chatId];
         }
         
         const result = await pool.query(query, params);
